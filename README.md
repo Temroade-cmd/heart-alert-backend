@@ -72,7 +72,7 @@ FastAPI · PostgreSQL · XGBoost · OpenRouter · Stripe · deployed on Render
 |---|---|---|
 | `age` | Age | years |
 | `sex` | Sex | 1 male, 0 female |
-| `cp` | Chest pain type | 1 typical angina, 2 atypical angina, 3 non-anginal pain, 4 asymptomatic |
+| `cp` | Chest pain type | 0 typical angina, 1 atypical angina, 2 non-anginal pain, 3 asymptomatic |
 | `trestbps` | Resting blood pressure | mm Hg |
 | `chol` | Serum cholesterol | mg/dl |
 | `fbs` | Fasting blood sugar > 120 mg/dl | 1 yes, 0 no |
@@ -80,7 +80,10 @@ FastAPI · PostgreSQL · XGBoost · OpenRouter · Stripe · deployed on Render
 | `thalach` | Maximum heart rate reached | bpm |
 | `exang` | Exercise-induced angina | 1 yes, 0 no |
 | `oldpeak` | ST depression induced by exercise | mm |
-| `slope` | Slope of the peak exercise ST segment | 1 upsloping, 2 flat, 3 downsloping |
+| `slope` | Slope of the peak exercise ST segment | 0 upsloping, 1 flat, 2 downsloping |
+
+The API uses the Cleveland coding for `cp` and `slope`, like the mobile app and the thesis.
+The combined CSV codes both one step higher (`cp` 1 to 4, `slope` 1 to 3), so `app/ml/model.py` adds 1 to them before calling the model.
 
 The Cleveland data alone has two more features, `ca` (vessels seen by fluoroscopy) and `thal` (thallium scintigraphy).
 They were not collected consistently across the four cohorts, so the model uses the 11 features shared by all of them.
@@ -176,9 +179,9 @@ Example prediction request (the doctor must be logged in and approved)
 curl -X POST http://localhost:8000/predict \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
-  -d '{"patient_name": "John Doe", "age": 60, "sex": 1, "cp": 4, "trestbps": 130,
+  -d '{"patient_name": "John Doe", "age": 60, "sex": 1, "cp": 3, "trestbps": 130,
        "chol": 210, "fbs": 0, "restecg": 0, "thalach": 150, "exang": 0,
-       "oldpeak": 0.8, "slope": 1}'
+       "oldpeak": 0.8, "slope": 0}'
 ```
 
 ```json

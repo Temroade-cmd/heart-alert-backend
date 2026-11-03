@@ -1,6 +1,6 @@
 """
 Heart Disease Prediction Model Loader
-Loads the trained Random Forest model and makes predictions
+Loads the trained XGBoost model and makes predictions
 """
 
 import joblib
@@ -26,9 +26,12 @@ def predict_heart_disease(age, sex, cp, trestbps, chol, fbs, restecg, thalach, e
             "recommendation": "Model unavailable. Please try again later."
         }
     
+    # The API receives cp in 0-3 and slope in 0-2 (Cleveland coding, used by the app and the thesis).
+    # The model was trained on the combined dataset, where cp is 1-4 and slope is 1-3,
+    # so both are shifted by one before calling the model.
     features = np.array([[
-        age, sex, cp, trestbps, chol, fbs, restecg, 
-        thalach, exang, oldpeak, slope
+        age, sex, cp + 1, trestbps, chol, fbs, restecg, 
+        thalach, exang, oldpeak, slope + 1
     ]])
     
     prediction = model.predict(features)[0]
