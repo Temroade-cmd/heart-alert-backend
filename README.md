@@ -36,7 +36,7 @@ FastAPI · PostgreSQL · XGBoost · OpenRouter · Stripe · deployed on Render
 - Create, update, list and delete patients, then link predictions to them.
 
 **HeartBot, the clinical assistant**
-- `POST /chat` sends the question to an LLM through OpenRouter.
+- `POST /chat` sends the question to an LLM through OpenRouter (Gemini 2.0 Flash in the thesis version, set with `OPENROUTER_MODEL`).
 - The patient's data and risk score are injected into the prompt, so the answer is about this patient and not generic.
 - A system prompt keeps it in a supporting role (no diagnosis, no drug dosages), and a medical disclaimer is appended when the answer has none.
 
@@ -82,8 +82,9 @@ FastAPI · PostgreSQL · XGBoost · OpenRouter · Stripe · deployed on Render
 | `oldpeak` | ST depression induced by exercise | mm |
 | `slope` | Slope of the peak exercise ST segment | 1 upsloping, 2 flat, 3 downsloping |
 
-The Cleveland data alone has two more features, `ca` (vessels seen by fluoroscopy) and `thal` (thallium stress test).
-They are not available for the other three sites, so the model uses the 11 features shared by all of them.
+The Cleveland data alone has two more features, `ca` (vessels seen by fluoroscopy) and `thal` (thallium scintigraphy).
+They were not collected consistently across the four cohorts, so the model uses the 11 features shared by all of them.
+It also keeps the model usable without these specialised exams, the 11 features come from routine exams or an exercise stress test.
 
 ### Results
 
@@ -100,6 +101,16 @@ Six algorithms were compared on a stratified 80/20 split of the 1,190 patients, 
 
 XGBoost was kept for production. It has the best accuracy, precision, recall and F1, an AUC close to the best one, and it is fast to serve.
 On the 238 test patients it made 15 errors, 6 false positives and 9 false negatives.
+A 5-fold cross-validation gives a mean accuracy of 92.35% (± 3.48).
+
+The production model is an `XGBClassifier` with 100 trees, a maximum depth of 6 and a learning rate of 0.3.
+Its two most important features are the ST slope (42.3%) and the chest pain type (16.3%).
+
+### Benchmark on the Cleveland subset
+
+To compare with the literature, the same six algorithms were also trained on the classic Cleveland subset
+(303 patients, 13 features). There, Random Forest is the best model, with 88.52% accuracy and an AUC-ROC of 95.13%.
+XGBoost reaches 85.25% on this smaller set, and only becomes the best model on the larger combined dataset.
 
 ### From probability to risk category
 
@@ -244,7 +255,7 @@ gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
 ## Limitations
 
 - The model is trained on public research data collected in the 1980s, 1,190 patients from four centres. Missing values are stored as 0 in the source data (172 patients have a cholesterol of 0). It has not been validated on other populations.
-- The scores are reported on a single train and test split. Cross-validation would give a more reliable estimate.
+- The data comes mostly from Western populations. No Algerian data was available, so the model may not fit local patients.
 - The risk thresholds (0.30 and 0.60) are fixed by hand, not calibrated on clinical outcomes.
 - HeartBot depends on an external LLM. Its answers can be wrong and must be checked by the clinician.
 
