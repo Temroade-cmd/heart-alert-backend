@@ -255,6 +255,7 @@ gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
 ## Limitations
 
 - The model is trained on public research data collected in the 1980s, 1,190 patients from four centres. Missing values are stored as 0 in the source data (172 patients have a cholesterol of 0). It has not been validated on other populations.
+- The combined CSV contains 272 duplicate rows, so 918 unique patients. Some test patients therefore also appear in the training set, and the scores above are optimistic. Trained the same way on the 918 unique patients, XGBoost reaches about 86% accuracy (85.7% ± 1.6 in 5-fold cross-validation).
 - The data comes mostly from Western populations. No Algerian data was available, so the model may not fit local patients.
 - The risk thresholds (0.30 and 0.60) are fixed by hand, not calibrated on clinical outcomes.
 - HeartBot depends on an external LLM. Its answers can be wrong and must be checked by the clinician.
